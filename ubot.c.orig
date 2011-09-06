@@ -1,0 +1,211 @@
+#include "ubot.h"
+
+//#include <stdio.h>
+
+
+
+
+
+#if 0
+void debug_mode(void)
+{
+    UCHAR inp=0;
+
+    /* GivePos(LF3,DDRB);
+     GiveNeg(LF3,FLYPORT);*/
+////////////////// STEP_T Controls the Number of step req to move one block
+    inp=STEP_T;
+    do {
+        if (IsSensor(LF1,1)) inp++;
+        else if (IsSensor(LF2,1)) inp--;
+
+        lcd_clrscr();
+        lcd_puts("# of Step_T?:");
+        itoa(inp,BUFF,10);
+        lcd_puts(BUFF);
+        _delay_ms(100);
+
+        while ((IsSensor(LF1,0)) && (IsSensor(LF2,0)) && (IsSensor(LF4,0)) );
+
+    } while (IsSensor(LF4,0));
+    STEP_T=inp;
+    lcd_puts("Step_T Config:");
+    itoa(STEP_T,BUFF,10);
+    write_till_lcd(BUFF,500);
+////////////////// STEP_R  Controls the Number of step req to rotate 90deg
+    inp=STEP_R;
+    do {
+        if (IsSensor(LF1,1)) inp++;
+        else if (IsSensor(LF2,1)) inp--;
+
+        lcd_clrscr();
+        lcd_puts("# of Step_R?:");
+        itoa(inp,BUFF,10);
+        lcd_puts(BUFF);
+        _delay_ms(100);
+        while ((IsSensor(LF1,0)) && (IsSensor(LF2,0)) && (IsSensor(LF4,0)) );
+
+    } while (IsSensor(LF4,0));
+    STEP_R=inp;
+    lcd_puts("Step_R Config:");
+    itoa(STEP_R,BUFF,10);
+    write_till_lcd(BUFF,500);
+////////////////// SPEED More the value, less the speed
+    inp=SPEED;
+    do {
+        if (IsSensor(LF1,1)) inp++;
+        else if (IsSensor(LF2,1)) inp--;
+        lcd_clrscr();
+        lcd_puts("Speed?:");
+        itoa(inp,BUFF,10);
+        lcd_puts(BUFF);
+        _delay_ms(100);
+        while ((IsSensor(LF1,0)) && (IsSensor(LF2,0)) && (IsSensor(LF4,0)) );
+
+    } while (IsSensor(LF4,0));
+    SPEED=inp;
+    lcd_puts("Speed Config:");
+    itoa(STEP_R,BUFF,10);
+    write_till_lcd(BUFF,500);
+////////////////// ADC_F Sensor Front Calib
+
+    do {
+        if (IsSensor(LF1,1)) ADC_F++;
+        else if (IsSensor(LF2,1)) ADC_F--;
+        lcd_clrscr();
+        lcd_puts("ADC_F?:");
+        itoa(ADC_F,BUFF,10);
+        lcd_puts(BUFF);
+        _delay_ms(100);
+        while ((IsSensor(LF1,0)) && (IsSensor(LF2,0)) && (IsSensor(LF4,0)) );
+
+    } while (IsSensor(LF4,0));
+    lcd_puts("ADC_F Config:");
+    itoa(STEP_R,BUFF,10);
+    write_till_lcd(BUFF,500);
+/////////////////////////////////////////
+
+    write_till_lcd("Write to ROM?",500);
+    while ((IsSensor(LF1,0)) && (IsSensor(LF4,0)) );
+    if (IsSensor(LF1,1)) {
+        write_eeprom_info();
+        write_till_lcd("Writen To ROM",500);
+    }
+    else if (IsSensor(LF4,1)) {
+        write_till_lcd("Setting Applied",500);
+    }
+
+
+
+
+}
+void calib(void)
+{
+    while (1) {
+        uint16_t t=ReadADC(6);
+
+
+
+
+
+        lcd_putc('0'+SENSOR_ON(RF4));
+        lcd_putc('0'+SENSOR_ON(RF3));
+        lcd_putc('0'+SENSOR_ON(RF2));
+        lcd_putc('0'+SENSOR_ON(RF1));
+        lcd_putc(' ');
+
+        lcd_putc('0'+SENSOR_ON(LF1));
+        lcd_putc('0'+SENSOR_ON(LF2));
+        lcd_putc('0'+SENSOR_ON(LF3));
+        lcd_putc('0'+SENSOR_ON(LF4));
+
+        lcd_putc(' ');
+        itoa(t,BUFF,10);
+        lcd_puts(BUFF);
+        lcd_putc('(');
+        itoa(t>=ADC_F,BUFF,10);
+        lcd_puts(BUFF);
+        lcd_putc(')');
+        _delay_ms(100);
+        lcd_clrscr();
+    }
+
+
+
+}
+#endif
+int main(void)
+{
+SetOn(PORTD,PD1);//Debugging Pullup
+init_adc();//ADC
+
+    //init_motors();
+if(DEBUGMODE){
+    init_lcd();
+    
+    
+  while(1)
+    welcome_message();}
+    //load_eeprom_info();
+    //SPEED=200;
+/*    while (1) {*/
+/*        lcd_clrscr();*/
+/*        lcd_puts("Enter Mode");*/
+/*        _delay_ms(50);*/
+/*        if (IsSensor(RF1,1))*/
+/*            calib();*/
+/*        else if (IsSensor(RF4,1))*/
+/*            debug_mode();*/
+/*        else if (IsSensor(LF3,1)) {*/
+
+
+/*            while (1) {*/
+/*                lcd_clrscr();*/
+/*                lcd_puts("Enter Direction");*/
+/*                _delay_ms(50);*/
+/*                if (IsSensor(LF2,1))*/
+/*                    break;*/
+/*                else if (IsSensor(RF4,1))*/
+/*                {*/
+/*                    write_till_lcd("FW",500);*/
+/*                    M_F(STEP_T);*/
+/*                    init_motor();*/
+
+/*                }*/
+/*                else if (IsSensor(RF1,1))*/
+/*                {*/
+/*                    write_till_lcd("RT",500);*/
+/*                    M_R(STEP_R);*/
+/*                    M_F(STEP_T);*/
+/*                    init_motor();*/
+
+/*                }*/
+/*                else if (IsSensor(LF1,1))*/
+/*                {*/
+/*                    write_till_lcd("LT",500);*/
+/*                    M_L(STEP_R);*/
+/*                    M_F(STEP_T);*/
+/*                    init_motor();*/
+
+/*                }*/
+/*                else if (IsSensor(LF4,1))*/
+/*                {*/
+/*                    write_till_lcd("BK",500);*/
+/*                    M_R(STEP_R);*/
+/*                    M_R(STEP_R);*/
+/*                    M_F(STEP_T);*/
+/*                    init_motor();*/
+
+/*                }*/
+
+
+
+/*            }*/
+
+
+/*        }*/
+
+/*    }*/
+    return 0;
+}
+

@@ -1,0 +1,155 @@
+
+#include "ubot.h"
+
+void calib(void);
+void Menu(const char* title, UCHAR* dest, UCHAR inc_key,UCHAR dec_key, UCHAR end_key)
+{
+    do {
+        if (KEYPRESS(inc_key)) (*dest)++;
+        else if (KEYPRESS(dec_key)) (*dest)--;
+        lcd_clrscr();
+        lcd_puts("Enter ");
+        lcd_puts(title);
+        itoa(*dest,BUFF,10);
+        lcd_gotoxy(0,2);
+        lcd_puts(BUFF);
+        _delay_ms(100);
+
+        while ( NOKEYPRESS );//pause
+        //lcd_puts("H");//debuggin
+    } while (!KEYPRESS(end_key));
+
+    lcd_puts(title);
+    lcd_puts("=:");
+    itoa(*dest,BUFF,10);
+    lcd_gotoxy(0,2);
+    write_till_lcd(BUFF,500);
+}
+
+void debug_mode(void)
+{
+    KEYBOARDPORT=0xFF;
+//initial menu
+    do {
+        if (KEYPRESS(K1)) calib();
+        else if (KEYPRESS(K4)) return;
+        lcd_clrscr();
+        lcd_puts("1.Calibaration");
+        lcd_gotoxy(0,2);
+        lcd_puts("2.Configure");
+        _delay_ms(100);
+
+        while ( NOKEYPRESS );//pause
+
+    } while (!KEYPRESS(K2));//
+////////////////// Sets P_K
+    Menu("P_K",&lconfig.P_K,K3,K4,K1);
+    Menu("I_K",&lconfig.I_K,K3,K4,K1);
+    Menu("D_K",&lconfig.D_K,K3,K4,K1);
+    Menu("BaseSpeed",&lconfig.basespeed,K3,K4,K1);
+    Menu("MaxSpeed",&lconfig.maxspeed,K3,K4,K1);
+    UCHAR i;
+    for (i=0;i<6;i++)
+    {
+        itoa(i+1,BUFF,10);
+        BUFF[1]='S';
+        BUFF[2]=0;
+        Menu(BUFF,&lconfig.Threshold[i],K3,K4,K1);
+    }
+/////////////////////////////////////////
+
+    lcd_puts("Write to ROM?");
+    lcd_gotoxy(0,2);
+    lcd_puts("1.Yes 2.No");
+    while (NOKEYPRESS);//pause
+    if (KEYPRESS(K1)) {
+        write_eeprom_info();
+        write_till_lcd("Writen To ROM",500);
+    }
+    else if (KEYPRESS(K2)) {
+        write_till_lcd("ROM not Written",500);
+    }
+
+
+
+
+}
+
+void calib(void)
+{
+    init_adc();
+    UCHAR i=0;
+    while (!KEYPRESS(K3)) {
+
+        for (i=0;i<6;i++)
+        {
+            UCHAR t=ReadADC(i);
+
+            itoa(t,BUFF,10);
+            lcd_puts(BUFF);
+            (t<lconfig.Threshold[i])?lcd_putc('T'):lcd_putc('F');
+            lcd_putc(' ');
+        }
+
+
+        _delay_ms(100);
+        lcd_clrscr();
+    }
+
+}
+//void transverse(void);
+int main(void)
+{
+    load_eeprom_info();
+    SetOn(PORTD,PD1);//Debugging Pullup
+
+    init_sensors();
+
+    while (1) {//init_motors();
+        if (KEYPRESS(K3)) {
+            init_lcd();
+            lcd_puts("HELLO");
+            debug_mode();
+            /*init_pwm();
+            init_motors();
+            while(DEBUGMODE)
+            {ml_fw(255);
+            mr_fw(255);_delay_ms(1000);
+            mr_rv(255);_delay_ms(1000);
+            ml_rv(255);_delay_ms(1000);}*/
+
+
+        }
+        else{
+        init_pwm();
+        init_motors();
+        init_adc();
+        //ml_fw(lconfig.basespeed);
+        //mr_fw(lconfig.basespeed);
+        int correction=(int)calc_correction();
+        int leftspeed=lconfig.basespeed+correction;
+        int rightspeed=lconfig.basespeed-correction;
+        if (leftspeed>lconfig.maxspeed) leftspeed=lconfig.maxspeed;
+        if (rightspeed>lconfig.maxspeed) rightspeed=lconfig.maxspeed;
+        if (leftspeed<0) leftspeed=0;
+        if (rightspeed<0) rightspeed=0;
+        ml_fw((UCHAR)leftspeed);
+        mr_fw((UCHAR)rightspeed);
+        }
+        
+    }
+return 0;}
+
+
+void inc_speed(UCHAR *speed, UCHAR n)
+{
+    if (*speed<255) *speed+=n;
+
+}
+void dec_speed(UCHAR *speed, UCHAR n)
+{
+    if (*speed>0) *speed-=n;
+
+}
+
+
